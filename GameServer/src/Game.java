@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,7 +12,7 @@ public class Game {
 	Player play;
 	
 	public Game(Player player) {
-		int length;
+		int length=0;
 		List<Integer> array = new LinkedList<>();
 		play= player;
 		
@@ -19,7 +20,13 @@ public class Game {
 		    array.add(i);
 		}
 		
-		length=Integer.parseInt(play.readLine());
+		try {
+			length=Integer.parseInt(play.readLine());
+		} catch (NumberFormatException e) {
+			System.err.println("Number format exception encountered.");
+		} catch (IOException e) {
+			System.err.println("IO exception encountered." );
+		}
 		
 		guessNumber="";
 		for(int i=0;i<length;i++) {
@@ -31,10 +38,15 @@ public class Game {
 	
 	public void play() {
 		boolean win=false;
-		String guess;
+		String guess="";
 		int correct;
 		for(int i=0;i<NUM_GUESSES;i++) {
-			guess=play.readLine();
+			try {
+				guess=play.readLine();
+			} catch (IOException e) {
+
+				System.err.println("IO exception encountered." );
+			}
 			
 			correct=processGuess(guess);
 			

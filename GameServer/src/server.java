@@ -8,7 +8,12 @@ public class server {
 		int serverPort = 19120;
 		
 		//Generate sockets
-		Socket clientSocket = generateSocket(serverPort); 
+		Socket clientSocket=null;
+		try {
+			clientSocket = generateSocket(serverPort);
+		} catch (IOException e) {
+			System.err.println("IO exception encountered." );
+		} 
 		
 		//Generate player object
 		Player player = new Player(clientSocket);
