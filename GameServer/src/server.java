@@ -25,7 +25,7 @@ public class server {
 		Player player = new Player(clientSocket);
 		
 		//Start game
-		Game game = new Game(player);
+		Game game = new Game(player,log);
 		
 		//Play game
 		game.play();

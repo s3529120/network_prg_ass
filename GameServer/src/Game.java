@@ -8,13 +8,15 @@ public class Game {
 
 	private final static int NUM_GUESSES = 10;
 
-	String guessNumber;
-	Player play;
+	private String guessNumber;
+	private Player play;
+	private Logger log;
 	
-	public Game(Player player) {
+	public Game(Player player,Logger log) {
 		int length=0;
 		List<Integer> array = new LinkedList<>();
 		play= player;
+		this.log = log;
 		
 		for (int i = 1; i <= 6; i++) {
 		    array.add(i);
@@ -22,6 +24,7 @@ public class Game {
 		
 		try {
 			length=Integer.parseInt(play.readLine());
+			log.logCommunication(play, "Resquested length of "+length);
 		} catch (NumberFormatException e) {
 			System.err.println("Number format exception encountered.");
 		} catch (IOException e) {
@@ -41,10 +44,15 @@ public class Game {
 		String correct;
 		String[] response;
 		
+
+		log.logGame(play, "Single player game started");
+		
 		//Accept series of guesses from player 
 		for(int i=0;i<NUM_GUESSES;i++) {
 			try {
 				guess=play.readLine();
+				
+				log.logCommunication(play, guess);
 			} catch (IOException e) {
 
 				System.err.println("IO exception encountered." );
@@ -56,14 +64,19 @@ public class Game {
 			//Extract elements
 			response=correct.split("-",-1);
 			
+			log.logGame(play, "Guess made: "+guess +
+					response[0]+" correct"+response[1]+" incorrect");
+			
 			//Send response to client
 			play.writeLine(correct);
 			
 			//Check for correct guess
 			if(Integer.parseInt(response[0])==guessNumber.length()) {
-				break;
+				log.logGame(play, "won the game");
+				return;
 			}
 		}
+		log.logGame(play, "No winner for game");
 	}
 	
 	/*Determine number of correct guess and incorrect places
