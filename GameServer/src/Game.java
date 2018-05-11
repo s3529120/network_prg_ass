@@ -37,9 +37,11 @@ public class Game {
 	}
 	
 	public void play() {
-		boolean win=false;
 		String guess="";
-		int correct;
+		String correct;
+		String[] response;
+		
+		//Accept series of guesses from player 
 		for(int i=0;i<NUM_GUESSES;i++) {
 			try {
 				guess=play.readLine();
@@ -48,24 +50,48 @@ public class Game {
 				System.err.println("IO exception encountered." );
 			}
 			
+			//Find correct and incorrect positions
 			correct=processGuess(guess);
+
+			//Extract elements
+			response=correct.split("-",-1);
 			
-			play.writeLine(String.valueOf(correct));
-			if(correct==guessNumber.length()) {
-				win=true;
+			//Send response to client
+			play.writeLine(correct);
+			
+			//Check for correct guess
+			if(Integer.parseInt(response[0])==guessNumber.length()) {
 				break;
 			}
 		}
 	}
 	
-	private int processGuess(String guess) {
-		int correct=0;
+	/*Determine number of correct guess and incorrect places
+	 * 
+	 */
+	private String processGuess(String guess) {
+		int correct, incorrect;
+		incorrect = correct=0;
+		
+		//Iterate through guess number positions
 		for(int i=0;i<guessNumber.length();i++) {
 			if(guessNumber.charAt(i)==guess.charAt(i)) {
 				correct++;
 			}
+			//Iterate through each guess position for incorrects
+			for(int j=0;j<guessNumber.length();j++) {
+				//If same position not relevant to incorrects
+				if(i==j) {
+					continue;
+				}
+				//CHeck for incorrects
+				if(guessNumber.charAt(j)==guess.charAt(i)) {
+					incorrect++;
+				}
+			}
 		}
-		return correct;
+		//Return string
+		return correct+"-"+incorrect;
 	}
 	
 	public void end() {

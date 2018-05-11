@@ -8,14 +8,17 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 public class client {
+	//Constant values
 	public final static String SERVER_ADDRESS= new String ("m1-c17n1.csit.rmit.edu.au");
 	public final static int SERVER_PORT= 19120;
 
 	public static void main(String[] args) {
 		String userInput;
-		int guessLen = 0,correct = 0,turns=0;
+		int guessLen,correct,incorrect,turns;
+		turns = guessLen = correct = incorrect = 0;
+		String[] response;
 		
-		//Setup message echo socket writer
+		//Initialize player and connections
 		Player me = null;
 		BufferedReader stdIn =null;
 		try {
@@ -29,21 +32,28 @@ public class client {
 			System.exit(1);
 		}
 		
+		//Request desired guess string length
 		System.out.println("Please enter the length of desired guess string");
 		try {
 		while ((userInput = stdIn.readLine()) != null) 
 		{
 			try {
 				guessLen=Integer.parseInt(userInput);
-				}catch(NumberFormatException e){
+				}
+			
+				//Check if number
+				catch(NumberFormatException e){
 					System.out.println("Invalid input enter a number between 3-8");
 					continue;
 				}
 			
+				//Chexk if in correct range
 				if(guessLen<3 || guessLen>8) {
 					System.out.println("Invalid input enter a number between 3-8");
 					continue;
 				}
+				
+				//Send requested length to server
 				me.writeLine(userInput);
 			}
 		}catch(IOException e) {
@@ -52,11 +62,14 @@ public class client {
 		
 		
 		
-        //Take in user messages and recieve echos until 'x' is written and echoed
+        //Take and process guesses from user
 		System.out.println("Please enter your guess (String of numbers "+guessLen+" long)");
 		try {
+			
+			//Read in lines from console
 			while ((userInput = stdIn.readLine()) != null) 
 			{
+				//Check if guess is correct length
 				if(userInput.length()!=guessLen) {
 					System.out.println("Your guess must be "+guessLen+" long)");	
 					continue;
@@ -64,21 +77,29 @@ public class client {
 				//Print guess to server
 				me.writeLine(userInput);
 				
-				//Read response message and echo unless 'x' then quit
+				//Read back correct and incorrect values
 				try {
-					correct = Integer.parseInt(me.readLine());
+					response=me.readLine().split("-",-1);
+					correct = Integer.parseInt(response[0]);
+					incorrect = Integer.parseInt(response[1]);
 				} catch (NumberFormatException e) {
 					System.err.println("Invalid response from server");
 				} catch (IOException e) {
 					System.err.println("Failed to get message from server");
 				}
+				
+				//Increment turn counter
 				turns++;
+				
+				//CHeck if guess was correct and inform user
 				if(correct!=guessLen) {
 					System.out.println("Your guess was "+correct+"/"+guessLen+" correct");
 				}else {
 					System.out.println("Your guess was  correct!, you win!");
 					break;
 				}
+				
+				//Check if max turns exceeded
 				if(turns==10) {
 					System.out.println("You failed to guess in time :(");
 					break;
