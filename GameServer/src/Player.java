@@ -5,9 +5,9 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class Player {
-		PrintWriter out; 
-		BufferedReader in;
-		Socket socket;
+		private PrintWriter out; 
+		private BufferedReader in;
+		private Socket socket;
 	public Player(Socket clientSocket) {
 		//Generate readers and writer
 		try {
@@ -55,5 +55,9 @@ public class Player {
 			socket.close(); 
 		}catch (IOException e) {;
 		}
+	}
+	
+	public String getAddress() {
+		return socket.getRemoteSocketAddress().toString();
 	}
 }
