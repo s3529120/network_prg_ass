@@ -27,9 +27,10 @@ public class Logger {
 	
 	}
 	
-	private byte[] logStr(Player play, String message) {
+	
+	private byte[] logStr(String message) {
 		String write="";
-		write+=getDate()+" "+play.getAddress()+" "+message+"\n";
+		write+=getDate()+" "+message+"\n";
 		
 		return write.getBytes();
 		
@@ -42,14 +43,36 @@ public class Logger {
 	
 	public void logCommunication(Player play, String message) {
 		try {
-			cFile.write(logStr(play, message));
+			cFile.write(logStr(play.getAddress()+" "+message));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	public void logGame(Player play,String message) {
 		try {
-			gFile.write(logStr(play, message));
+			gFile.write(logStr(play.getAddress()+" "+message));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	public void logCommunication(ThreadPlayer play, String message) {
+		try {
+			cFile.write(logStr(play.getAddress()+" "+message));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	public void logGame(ThreadPlayer play,String message) {
+		try {
+			gFile.write(logStr(play.getAddress()+" "+message));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void logGame(String message) {
+		try {
+			gFile.write(logStr(message));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
