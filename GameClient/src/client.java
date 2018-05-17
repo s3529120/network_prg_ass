@@ -111,6 +111,8 @@ public class client {
 			System.err.println("Failed to read input");
 		}
 		
+		
+		
 
 		
 		//CLose streams and sockets

@@ -21,6 +21,11 @@ public class MultiGame extends Thread{
 		this.players= players;
 		this.log = log;
 		
+		for(int i=0;i<players.length;i++) {
+			players[i].writeLine("Game starting!");
+			players[i].writeLine(Integer.toString(i));
+		}
+		
 	}
 	
 	public void run() {

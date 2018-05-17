@@ -15,8 +15,6 @@ public class multiserver {
 		List<ThreadPlayer> players;
 		ThreadPlayer play;
 		
-		//Generate sockets
-		Socket clientSocket=null;
 		
 		players = new LinkedList<ThreadPlayer>();
 		
