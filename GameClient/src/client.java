@@ -2,8 +2,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -13,6 +11,44 @@ public class client {
 	public final static int SERVER_PORT= 19120;
 
 	public static void main(String[] args) {
+		//First game run
+		playGame();
+		
+		//Check if user wants to play again
+		try {
+
+			BufferedReader in = generateReader(System.in);
+			
+			String userInput="";
+			System.out.println("Would you like to play again:"
+					+ " \"p\" or exit \"x\"");
+			while((userInput = in.readLine()) != null) 
+			{
+				//Exit
+				if(userInput.compareToIgnoreCase("x")==0) {
+					break;
+				}
+				//Play again
+				else if(userInput.compareToIgnoreCase("p")==0) {
+					playGame();
+				}
+				//Invalid entry
+				else {
+					System.out.println("Please enter to play again:"
+							+ " \"p\" or exit \"x\"");
+				}
+			}
+		} catch (IOException e) {
+			System.err.println("Failed to start reader");
+			System.exit(1);
+		}
+		
+		//Goodbye message
+		System.out.println("Thanks for playing\nExiting");
+	}
+	
+	//Connect to server and play game
+	private static void playGame() {
 		String userInput;
 		int guessLen,correct,incorrect,turns;
 		turns = guessLen = correct = incorrect = 0;
@@ -35,9 +71,11 @@ public class client {
 		//Request desired guess string length
 		System.out.println("Please enter the length of desired guess string");
 		try {
-		while ((userInput = stdIn.readLine()) != null) 
+		while((userInput = stdIn.readLine()) != null) 
 		{
 			try {
+				
+				//Get guess
 				guessLen=Integer.parseInt(userInput);
 				}
 			
@@ -47,7 +85,7 @@ public class client {
 					continue;
 				}
 			
-				//Chexk if in correct range
+				//Check if in correct range
 				if(guessLen<3 || guessLen>8) {
 					System.out.println("Invalid input enter a number between 3-8");
 					continue;
@@ -55,6 +93,7 @@ public class client {
 				
 				//Send requested length to server
 				me.writeLine(userInput);
+				break;
 			}
 		}catch(IOException e) {
 			System.err.println("Failed to read from console");
@@ -93,7 +132,7 @@ public class client {
 				
 				//CHeck if guess was correct and inform user
 				if(correct!=guessLen) {
-					System.out.println("Your guess was "+correct+"/"+guessLen+" correct");
+					System.out.println("Your guess was "+correct+" correct "+incorrect+" incorrect");
 				}else {
 					System.out.println("Your guess was  correct!, you win!");
 					break;
@@ -111,13 +150,8 @@ public class client {
 			System.err.println("Failed to read input");
 		}
 		
-		
-		
-
-		
 		//CLose streams and sockets
 		me.closeConnection();
-	
 	}
 	
 	/*Generates a buffered reader object for givven input stream

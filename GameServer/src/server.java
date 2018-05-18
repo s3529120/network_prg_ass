@@ -11,23 +11,34 @@ public class server {
 		int serverPort = 19120;
 		Logger log = new Logger(COMMUNICATION_LOG_FILE,GAME_LOG_FILE);
 		
-		//Generate sockets
+		//Declare socket
 		Socket clientSocket=null;
+		
+		//Start message
+		System.out.println("Starting server");
+
+		//Generate socket
 		try {
 			clientSocket = generateSocket(serverPort);
 		} catch (IOException e) {
 			System.err.println("IO exception encountered." );
 		} 
 		
+		//Player connected message
+		System.out.println("Player connected");
+
 		//Generate player object
 		Player player = new Player(clientSocket);
 		
 		//Start game
 		Game game = new Game(player,log);
-		
+	
 		//Play game
 		game.play();
 		
+		//Game finished message
+		System.out.println("Game finished");
+
 		//Close objects and streams
 		game.end();
 		log.close();
@@ -41,8 +52,8 @@ public class server {
 	public static Socket generateSocket(int portnum) throws IOException{
 		ServerSocket socket = new ServerSocket(portnum); 
 		return socket.accept(); 
-		
 	}
+	
 	
 	
 

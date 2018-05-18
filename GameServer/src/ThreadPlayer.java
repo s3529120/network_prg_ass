@@ -3,138 +3,202 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.net.SocketTimeoutException;
 
 public class ThreadPlayer extends Thread{
-		private MultiGame game;
-		private PrintWriter out; 
-		private BufferedReader in;
-		private Socket socket;
-		private boolean first,done;
-		private int topScore;
+	//Timeout duration
+	public static final int TIMEOUT = 20000;
+	
+	private String playerName;
+	private MultiGame game;
+	private PrintWriter out; 
+	private BufferedReader in;
+	private Socket socket;
+	private boolean first,done,lock;
+	private int topScore;
 		
-	public ThreadPlayer(Socket clientSocket) {
-		//Generate readers and writer
+	public ThreadPlayer(Socket clientSocket) throws IOException {
+		//Generate readers and writer and set variables
 		try {
 			topScore=0;
 			first=done=false;
 			socket=clientSocket;
+			socket.setSoTimeout(TIMEOUT);
 			out = new PrintWriter(clientSocket.getOutputStream(), true); 
 			in = generateReader(clientSocket);
-		} catch (IOException e) {
-			System.err.println("Failed to generate reader/writer for client socket.");
+		}
+		//Throw exception in failure encountered
+		catch (IOException e) {
+			throw e;
 		}
 	}
 
-	public ThreadPlayer(Socket clientSocket,boolean fir) {
-		this(clientSocket);
-		first=true;
-	}
-	
+	//Game mutator
 	public void setGame(MultiGame game) {
 		this.game=game;
 	}
-	
-	public void run() {
-		
-		if(!first) {
-			synchronized(game) {
-				writeLine("Waiting for player one to select length");
-				try {
-					wait();
-				} catch (InterruptedException e) {
-					
-				}
-				writeLine(Integer.toString(game.getGuessNumber().length()));
+
+	//Wait until signaled by game
+	public void customLock(){
+		lock=false;
+		while(!lock){
+			try{
+				Thread.sleep(MultiGame.SLEEP_TIME);
+			}catch(Exception e){
+				lock=true;
 			}
-		}else {
-			synchronized(game) {
-				getGuessLength();
-				notify();
-			}
-		}
-		
-		synchronized(game) {
-			playGame();
-			done=true;
-			try {
-				wait();
-			} catch (InterruptedException e) {
-			}
-		}
-				
-		try {
-			awaitResults();
-		} catch (InterruptedException e) {
 		}
 	}
+
+	//Unlock thread allowing to proceed
+	public void unlock(){
+		lock=true;
+	}
 	
-	public void playGame() {
+	//Start thread to play game
+	public void run() {	
+		
+		/*Check if first player to see if guess length
+		 * should be requested
+		 */
+		if(first) {
+			try {
+				//Ask player to set name
+				requestPlayerName();
+				
+				//Get guess string length from player
+				getGuessLength();
+			}
+			//If failed remove player and set default length
+			catch (Exception e) {
+				closeConnection();
+				game.removePlayer(this);
+				game.setDefaultLength();
+				game.notify();
+			}
+		}
+		//If not first player
+		else {
+			try {
+				//Get player to set name
+				requestPlayerName();
+			}
+			//Remove player if failed
+			catch (Exception e) {
+				closeConnection();
+				game.removePlayer(this);
+			}
+			
+			//Wait for guess length to be set
+			customLock();
+		}
+		
+		//Reset value of done
+		done=false;
+	
+		//Start guessing sequence
+		try {
+			playGame();
+		}
+		//Remove player if exits or connection lost
+		catch (Exception e) {
+			closeConnection();
+			game.removePlayer(this);
+		}
+		
+		//Set done so server know if finished with this step
+		done=true;
+		
+		//Wait for all players to finish guessing
+		customLock();
+	}
+	
+	
+	//Guessing section of game
+	public void playGame() throws Exception {
 		String guess="";
 		String correct;
 		String[] response;
-		
+		boolean maxTurnsReached=false;
+		int turns =0;
+	
+	
 		//Accept series of guesses from player 
-		for(int i=0;i<MultiGame.NUM_GUESSES;i++) {
-			try {
-				guess=readLine();
-								
-				game.getLog().logCommunication(this, guess);
-			} catch (IOException e) {
-
-				System.err.println("IO exception encountered." );
-			}
+		while(!maxTurnsReached) {
+			
+			//Increment turn counter
+			turns++;
+			
+			//Read guess from player
+			guess=readLine();	
+			
+			//Log guess
+			game.getLog().logCommunication(this, guess);
+			
 							
 			//Find correct and incorrect positions
 			correct=game.processGuess(guess);
 
 			//Extract elements
 			response=correct.split("-",-1);
-							
+
+			//Log correctness of guess	
 			game.getLog().logGame(this, "Guess made: "+guess +
 					response[0]+" correct"+response[1]+" incorrect");
-							
+				
+			//Update best score by player
 			updateScore(Integer.parseInt(response[0]));
 							
 			//Send response to client
 			writeLine(correct);
 							
 			//Check for correct guess
-			if(Integer.parseInt(response[0])==game.getGuessNumber().length()) {
+			if(Integer.parseInt(response[0])==game.getGuessNumber().length()||turns==MultiGame.NUM_GUESSES) {
 				break;
 			}
 		}
+		
+		//Log player score
 		game.getLog().logGame(this, "scored: "+topScore);
 		
-		closeConnection();
+		//Wait for game to finish message
+		writeLine("Waiting for game to finish");
+		
 	}
 	
 	
-	private void getGuessLength() {
-		List<Integer> array = new LinkedList<>();
-		int length=0;
-		for (int i = 1; i <= 6; i++) {
-		    array.add(i);
-		}
+	/* Get desired guess string length from player 1
+	 * throw exception on error or exit so game knows to
+	 * remove and set default value
+	 */
+	private void getGuessLength() throws  Exception {
 		
-		try {
+		//Synchronize portion on managing game
+		synchronized(game){
+			int length=0;
+			
+			//Read desired guess
 			length=Integer.parseInt(readLine());
+			
+			//Log requested guess length
 			game.getLog().logCommunication(this, "Resquested length of "+length);
-		} catch (NumberFormatException e) {
-			System.err.println("Number format exception encountered.");
-		} catch (IOException e) {
-			System.err.println("IO exception encountered." );
+		
+			//Set guess length for game to generate string
+			game.setGuessLen(length);
+			
+			//Notify game that it can proceed
+			game.notify();
 		}
 		
-		String guessNumber="";
-		for(int i=0;i<length;i++) {
-			Collections.shuffle(array);
-			guessNumber+=((LinkedList<Integer>) array).pollFirst();
-		}
-		game.setGuessNumber(guessNumber);
-		
+	}
+	
+	/*Ask player to enter their name throws exception 
+	 * on error or quit message
+	 */
+	public void requestPlayerName() throws Exception {
+		//Request name
+		writeLine("Please enter your name");
+		playerName = readLine();
 	}
 
 	/*Generates a buffered reader object for givven input stream
@@ -147,57 +211,98 @@ public class ThreadPlayer extends Thread{
 		
 	}
 	
-	public String readLine() throws IOException {
-		String inputLine; 
-		if((inputLine = in.readLine()) != null) 
-		{
-			return inputLine;
-		}else {
-			return "";
+	/*Read line from player throws exception on exit or error
+	 * so that game can remove them
+	 * @return String message received
+	 */
+	public String readLine() throws Exception {
+		String inputLine;
+		
+		try {
+			
+			//Read line from player
+			if((inputLine = in.readLine()) != null) 
+			{
+				//Check for exit message
+				if(inputLine.compareToIgnoreCase("x")==0) {
+					throw new QuitException();
+				}
+				return inputLine;
+			}else {
+				return "";
+			}
+		}
+		
+		//Check for errors or quit instruction
+		catch(QuitException e) {
+			game.getLog().logCommunication(this, "player quit");
+			throw e;
+		}catch(SocketTimeoutException e) {
+			game.getLog().logCommunication(this, "Connection timed out");
+			throw e;
+		}catch(IOException e) {
+			game.getLog().logCommunication(this, "Read failed");
+			throw e;
+		}catch(Exception e) {
+			game.getLog().logCommunication(this, "Unexpected error occurred");
+			throw e;
 		}
 	}
 	
+	//Write message to player
 	public void writeLine(String message) {
-		//Echo message to client
 		out.println(message);
 	}
 	
+	//Close objects
 	public void closeConnection() {
 		//Close readers and writer
 		try {
 			out.close(); 
 			in.close();
 			
-				
 			//Close socket
 			socket.close(); 
-		}catch (IOException e) {;
+		}
+		//Catch already closed
+		catch (IOException e) {;
 		}
 	}
 	
+	//Remote address accessor
 	public String getAddress() {
 		return socket.getRemoteSocketAddress().toString();
 	}
 	
+	//Update to score if higher
 	private void updateScore(int score) {
 		if(score>topScore) {
 			topScore=score;
 		}
 	}
 	
-	private void awaitResults() throws InterruptedException{
-		synchronized(game) {
-			writeLine("Waiting for game to finish");
-			wait();
-		}
-		writeLine(game.getWinner()+"is the winner with a score of: "+game.getWinningScore());
-	}
-
+	//done accessor
 	public boolean getDone() {
 		return done;
 	}
 
+	//topScore accessor
 	public int getTopScore() {
 		return topScore;
+	}
+
+	//first accessor (is first player?)
+	public boolean getFirst(){
+		return first;
+	}
+	
+	//playerName accessor
+	public String getPlayerName() {
+		return playerName;
+	}
+	
+	//Set to first player
+	public void setFirst() {
+		first=true;
 	}
 }

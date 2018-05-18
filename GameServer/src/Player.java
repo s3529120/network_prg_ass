@@ -5,15 +5,19 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class Player {
-		private PrintWriter out; 
-		private BufferedReader in;
-		private Socket socket;
+	private PrintWriter out; 
+	private BufferedReader in;
+	private Socket socket;
+	private String address="";
+		
+	//Constructor initializes reader and writer
 	public Player(Socket clientSocket) {
-		//Generate readers and writer
+		//Generate reader and writer
 		try {
 			socket=clientSocket;
 			out = new PrintWriter(clientSocket.getOutputStream(), true); 
 			in = generateReader(clientSocket);
+			address=socket.getRemoteSocketAddress().toString();
 		} catch (IOException e) {
 			System.err.println("Failed to generate reader/writer for client socket.");
 		}
@@ -29,6 +33,7 @@ public class Player {
 		
 	}
 	
+	//Read line from client
 	public String readLine() throws IOException {
 		String inputLine; 
 		if((inputLine = in.readLine()) != null) 
@@ -39,25 +44,27 @@ public class Player {
 		}
 	}
 	
+	//Write message to client
 	public void writeLine(String message) {
-		//Echo message to client
 		out.println(message);
 	}
 	
+	//Close connections and objects
 	public void closeConnection() {
-		//Close readers and writer
+		//Close reader and writer
 		try {
 			out.close(); 
 			in.close();
 			
-				
 			//Close socket
 			socket.close(); 
-		}catch (IOException e) {;
 		}
+		//Check for already closed
+		catch (IOException e) {}
 	}
 	
+	//Gets client address
 	public String getAddress() {
-		return socket.getRemoteSocketAddress().toString();
+		return address;
 	}
 }

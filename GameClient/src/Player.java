@@ -1,26 +1,34 @@
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
 public class Player {
-		PrintWriter out; 
-		BufferedReader in;
-		Socket socket;
+	private PrintWriter out; 
+	private BufferedReader in;
+	private Socket socket;
+		
+	/*Player constructor
+	 * @param clientSocket SOcket connection to server
+	 */
 	public Player(Socket clientSocket) {
-		//Generate readers and writer
+		//Set values and generate reader and writer
 		try {
 			socket=clientSocket;
 			out = new PrintWriter(clientSocket.getOutputStream(), true); 
-			in = client.generateReader(clientSocket.getInputStream());
+			in = multiclient.generateReader(clientSocket.getInputStream());
 		} catch (IOException e) {
 			System.err.println("Failed to generate reader/writer for client socket.");
 		}
 	}
 	
+	/* Read line from server
+	 * @return String message from server
+	 */
 	public String readLine() throws IOException {
 		String inputLine; 
+		
+		//Check if value returned
 		if((inputLine = in.readLine()) != null) 
 		{
 			return inputLine;
@@ -29,8 +37,11 @@ public class Player {
 		}
 	}
 	
+	/* Write line to server
+	 * @param message String to send to server
+	 */
 	public void writeLine(String message) {
-		//Echo message to client
+		//Send message to server
 		out.println(message);
 	}
 	
@@ -40,10 +51,11 @@ public class Player {
 			out.close(); 
 			in.close();
 			
-				
 			//Close socket
 			socket.close(); 
-		}catch (IOException e) {;
 		}
+		
+		//Catch exceptions from already closed objects
+		catch (IOException e) {}
 	}
 }

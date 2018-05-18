@@ -11,23 +11,34 @@ public class Logger {
 	private FileOutputStream cFile;
 	private FileOutputStream gFile;
 	
+
+	//Constructor sets up files and output streams
 	public Logger(String cname, String gname) {
 		File comLog = new File(cname);
 		File gameLog = new File(gname);
+		
+		//Attempt to create files
 		try {
 			comLog.createNewFile();
 			gameLog.createNewFile();
-		} catch (IOException e1) {
+		} 
+		//Catch if already exists
+		catch (IOException e1) {}
+		
+		//Connect output stream to files
 		try {
 			cFile = new FileOutputStream(comLog, true);
 			gFile = new FileOutputStream(gameLog, true);
 		} catch (FileNotFoundException e) {
+			System.err.println("Could not find file");
 		} 
+	
+	
 	}
 	
-	}
-	
-	
+	/* Generate byte string to write to file
+	 * @param message String message to log
+	 */
 	private byte[] logStr(String message) {
 		String write="";
 		write+=getDate()+" "+message+"\n";
@@ -36,18 +47,30 @@ public class Logger {
 		
 	}
 	
+	/*Get current datetime for log
+	 * @return String current datetime
+	 */
 	public String getDate() {
 		Date date = new Date();
 		return dateFormat.format(date);
 	}
 	
+	/* Log communication from single player
+	 * @param play Player Single player
+	 * @param message String message to log
+	 */
 	public void logCommunication(Player play, String message) {
 		try {
-			cFile.write(logStr(play.getAddress()+" "+message));
+		cFile.write(logStr(play.getAddress()+" "+message));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
+	
+	/* Log game info from single player
+	 * @param play Player Single player
+	 * @param message String message to log
+	 */
 	public void logGame(Player play,String message) {
 		try {
 			gFile.write(logStr(play.getAddress()+" "+message));
@@ -55,6 +78,11 @@ public class Logger {
 			e.printStackTrace();
 		}
 	}
+	
+	/* Log communication from multi player
+	 * @param play Player multi player
+	 * @param message String message to log
+	 */
 	public void logCommunication(ThreadPlayer play, String message) {
 		try {
 			cFile.write(logStr(play.getAddress()+" "+message));
@@ -62,6 +90,11 @@ public class Logger {
 			e.printStackTrace();
 		}
 	}
+	
+	/* Log game info from multi player
+	 * @param play Player multi player
+	 * @param message String message to log
+	 */
 	public void logGame(ThreadPlayer play,String message) {
 		try {
 			gFile.write(logStr(play.getAddress()+" "+message));
@@ -70,6 +103,9 @@ public class Logger {
 		}
 	}
 	
+	/* Log general game information
+	 * @param message String message to log
+	 */
 	public void logGame(String message) {
 		try {
 			gFile.write(logStr(message));
@@ -78,11 +114,13 @@ public class Logger {
 		}
 	}
 	
+	//Close file
 	public void close() {
 		try {
-			cFile.close();close();
+			cFile.close();
+			gFile.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println("Logger file closed poorly");
 		}
 	}
 }

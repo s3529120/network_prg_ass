@@ -5,32 +5,47 @@ import java.util.List;
 
 
 public class Game {
-
+	//Number of allowed guesses
 	private final static int NUM_GUESSES = 10;
 
 	private String guessNumber;
 	private Player play;
 	private Logger log;
 	
+	/* Constructor holds player and log also
+	 * requests and generates guess string length
+	 */
 	public Game(Player player,Logger log) {
 		int length=0;
 		List<Integer> array = new LinkedList<>();
 		play= player;
 		this.log = log;
 		
-		for (int i = 1; i <= 6; i++) {
+		//CHeck if player missing
+		if(play==null){
+			System.err.println("failed");
+		}
+
+		//Initialize list of numbers to make up guess string
+		for (int i = 0; i <= 9; i++) {
 		    array.add(i);
 		}
 		
 		try {
+			//Recieve requested length
 			length=Integer.parseInt(play.readLine());
 			log.logCommunication(play, "Resquested length of "+length);
-		} catch (NumberFormatException e) {
+		} 
+		//Check for format exception
+		catch (NumberFormatException e) {
 			System.err.println("Number format exception encountered.");
-		} catch (IOException e) {
+		}
+		//Check for bad connection
+		catch (IOException e) {
 			System.err.println("IO exception encountered." );
 		}
 		
+		//Compose guess number
 		guessNumber="";
 		for(int i=0;i<length;i++) {
 			Collections.shuffle(array);
@@ -39,21 +54,26 @@ public class Game {
 		
 	}
 	
+	//Play game
 	public void play() {
 		String guess="";
 		String correct;
 		String[] response;
 		
-
+		//Log game start
 		log.logGame(play, "Single player game started");
 		
 		//Accept series of guesses from player 
 		for(int i=0;i<NUM_GUESSES;i++) {
 			try {
+				//Get guess
 				guess=play.readLine();
 				
+				//Log guess
 				log.logCommunication(play, guess);
-			} catch (IOException e) {
+			}
+			//Check for connection issues
+			catch (IOException e) {
 
 				System.err.println("IO exception encountered." );
 			}
@@ -64,23 +84,29 @@ public class Game {
 			//Extract elements
 			response=correct.split("-",-1);
 			
+			//Log correctness of guess
 			log.logGame(play, "Guess made: "+guess +
-					response[0]+" correct"+response[1]+" incorrect");
+					response[0]+" correct, "+response[1]+" incorrect");
 			
 			//Send response to client
 			play.writeLine(correct);
 			
 			//Check for correct guess
 			if(Integer.parseInt(response[0])==guessNumber.length()) {
+				//Log that game was won
 				log.logGame(play, "won the game");
+				
+				//Terminate game
 				return;
 			}
 		}
+		
+		//Log no winner found
 		log.logGame(play, "No winner for game");
 	}
 	
 	/*Determine number of correct guess and incorrect places
-	 * 
+	 * @param guess String guess by client
 	 */
 	private String processGuess(String guess) {
 		int correct, incorrect;
@@ -88,6 +114,8 @@ public class Game {
 		
 		//Iterate through guess number positions
 		for(int i=0;i<guessNumber.length();i++) {
+			
+			//Increment correct if found
 			if(guessNumber.charAt(i)==guess.charAt(i)) {
 				correct++;
 			}
@@ -97,7 +125,7 @@ public class Game {
 				if(i==j) {
 					continue;
 				}
-				//CHeck for incorrects
+				//Check for incorrects
 				if(guessNumber.charAt(j)==guess.charAt(i)) {
 					incorrect++;
 				}
@@ -107,6 +135,7 @@ public class Game {
 		return correct+"-"+incorrect;
 	}
 	
+	//Close player connection
 	public void end() {
 		play.closeConnection();
 	}
